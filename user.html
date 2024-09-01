@@ -1,0 +1,444 @@
+<html>
+<head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<title>User</title>
+</head>
+<body onload="mode()">
+<section class="bg-light">
+  <div class="bg-light m-0">
+    <h1>Welcome, User</h1>
+  </div>
+  <div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-secondary">
+      <!-- Brand/logo -->
+  <a class="navbar-brand" href="#">
+    <img src="sleep-pic.png" alt="logo" style="width:80px;">
+  </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link active" href="/cwynter/user.html">Home<span class="sr-only"></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cwynter/track.html">Sleep Tracker<span class="sr-only"></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cwynter/schedule.html">My Schedule<span class="sr-only"></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cwynter/data.html">View Data<span class="sr-only"></a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/cwynter/settings.html">Settings</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</section>	
+<div id="alert" class="alert alert-success text-center" role="alert">
+
+</div>
+<div class="container-flex m-2 text-center justify-content-center align-items-center mt-4">
+<div class="row mb-4">
+  <div class="col-lg-9 mb-4">
+    <div class="card text-center">
+      <div class="card-body text-center">
+        <div class="row align-items-center">
+          <div class="col-md">
+            <h5 class="card-title"><a href="data.html">View Past Information</a></h5>
+          </div>
+          <div class="col-md">
+            <h5 class="card-title"><a href="track.html">Log Sleep</a></h5>
+          </div>
+        </div>
+        <hr>
+        <div class="container justify-content-center mb-2">
+          <canvas id="myChart"></canvas>
+        </div>
+      </div>
+      <div class="row text-center">
+        <div class="col-md-9 text-center">
+          <p><strong>current sleep goal is <input onchange="changeGoal()" id="goal" style="width:10%; "></input> hours</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Tasks for Today</h5>
+        <hr>
+        <div id="tasksdiv">
+
+        </div>
+        <div>
+          <a href="schedule.html">Edit Schedule</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script>
+  async function loadData(){
+    const response = await fetch("userData.JSON");
+    const hours = await response.json();
+    console.log(hours); //testing getting data
+    console.log(hours[0]["week"]); //testing getting data
+    console.log(Object.keys(hours[2]["entry1"]).length); //testing imbedded json
+    console.log(hours[2]["entry1"]["time1"]);
+    var dt = new Date();
+    var month;
+    var day;
+    if (dt.getMonth() + 1 < 10){
+      month = "0" + (dt.getMonth() + 1).toString();
+    }
+    console.log(dt.getDate());
+    if (dt.getDate() < 10){
+      day = "0" + (dt.getDate()).toString();
+    }
+    const formatted_date = dt.getFullYear() + "-" + month+ "-" +   day;
+    console.log(formatted_date)
+    console.log("Current Day: " + (dt.getDay()+1).toString()); //getting the current day of the week (Im using sunday as 1 instead of 0)
+    //console.log(JSON.parse(window.sessionStorage.getItem("addTasks"))["dates"]["date"])
+    var userSleep = JSON.parse(window.sessionStorage.getItem("addSleep"));
+    var toAdd = null;
+    var toAdd2 = null;
+    var toAdd3 = null;
+    if (userSleep){
+      toAdd = userSleep["dates"]["date"];
+    }
+    var userTasks = JSON.parse(window.sessionStorage.getItem("addTasks"));
+    if (userTasks){
+      toAdd2 = (userTasks["dates"]["date"]);
+      toAdd3 = (userTasks["hours"]["describe"]);
+    }
+    //console.log(toAdd);
+    const labels = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
+  ];
+  var data = {};
+  if(dt.getDay()+1 == 1){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry1"][time] + " " + hours[2]["entry1"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  if(dt.getDay()+1 == 2){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [hours[1]["entry1"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry2"][time] + " " + hours[2]["entry2"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  if(dt.getDay()+1 == 3){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [hours[1]["entry1"], hours[1]["entry2"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], hours[1]["entry2"], JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry3"][time] + " " + hours[2]["entry3"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  if(dt.getDay()+1 == 4){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry4"][time] + " " + hours[2]["entry4"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+
+
+  if(dt.getDay()+1 == 5){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"], JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry5"][time] + " " + hours[2]["entry5"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  if(dt.getDay()+1 == 6){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"], hours[1]["entry5"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"], hours[1]["entry5"], JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry6"][time] + " " + hours[2]["entry6"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  if(dt.getDay()+1 == 7){
+    data = {
+    labels: labels,
+    datasets: [{
+      label: "Week of " + hours[1]["week"],
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data:[hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"], hours[1]["entry5"], hours[1]["entry6"]],
+    }]
+  };
+  if (toAdd != null){
+    if (toAdd == formatted_date){
+      data = {
+      labels: labels,
+      datasets: [{
+        label: "Week of " + hours[1]["week"],
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [hours[1]["entry1"], hours[1]["entry2"], hours[1]["entry3"], hours[1]["entry4"], , hours[1]["entry5"], hours[1]["entry6"],  JSON.parse(window.sessionStorage.getItem("addSleep"))["hours"]["hours"]],
+      }]
+    };   
+    }
+  }
+  for (let i = 1; i <= (Object.keys(hours[2]["entry1"]).length)/2; i++){
+    let time = "time" + i.toString();
+    let describe = "description" + i.toString();
+    document.getElementById("tasksdiv").innerHTML += hours[2]["entry7"][time] + " " + hours[2]["entry7"][describe] + "<br>";
+    }
+    if (toAdd2 != null){
+    for(let i = 0; i < toAdd2.length; i++){
+      if (toAdd2[i].split('T')[0] == formatted_date){
+        console.log(toAdd2[i].split('T')[1]);
+        document.getElementById("tasksdiv").innerHTML += toAdd2[i].split('T')[1] + " " + toAdd3[i] + "<br>";
+      }
+    }
+  }
+  }
+  console.log(data);
+  console.log(dt.getDay()+1);
+  const config = {
+    type: 'bar',
+    data: data,
+    options: {}
+  };
+  const myChart = new Chart(
+    document.getElementById('myChart'),
+    config
+  );
+
+
+  }
+  loadData();
+  document.getElementById("goal").value = window.sessionStorage.getItem("goal");
+  document.getElementById("alert").style.display="none";
+
+</script>
+<script>
+  function changeGoal(){
+    window.sessionStorage.setItem("goal", document.getElementById("goal").value);
+    document.getElementById("alert").innerHTML = "<p>Sleep Goal has been changed successfully!</p>";
+    document.getElementById("alert").style.display="block";
+    
+  }
+</script>
+
+<script type="text/javascript">
+  function mode() {
+    if (window.sessionStorage.getItem("dmode")){
+      console.log("dmode found");
+      let color = window.sessionStorage.getItem("dmode")
+      if (color == "dark"){
+        document.body.style = 'background : rgb(41,41,41);';
+      }
+      else{
+        document.body.style = 'background : white;';
+      }
+    }
+    else{
+      console.log("Nothing found")
+      window.sessionStorage.setItem("dmode", "light")
+    }
+
+  }
+</script> 
+ 
+</body>
+</html>
